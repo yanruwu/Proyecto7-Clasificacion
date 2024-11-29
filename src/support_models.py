@@ -15,6 +15,7 @@ from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score,
     roc_auc_score, confusion_matrix, roc_curve
 )
+from sklearn.svm import SVC
 from IPython.display import display
 
 def color_filas_por_modelo(row):
@@ -32,6 +33,8 @@ def color_filas_por_modelo(row):
 
     elif row["method"] == "logistic":
         return ["background-color: #b3d1ff; color: black"] * len(row)  
+    elif row["method"] == "svc":
+        return ["background-color: #dbdcff; color: black"] * len(row)
     
     return ["color: black"] * len(row)
 
@@ -86,7 +89,8 @@ class ClassificationModel:
             "decision_tree": DecisionTreeClassifier(random_state=self.random_state),
             "random_forest": RandomForestClassifier(random_state=self.random_state, n_jobs=-1),
             "gradient_boosting": GradientBoostingClassifier(random_state=self.random_state),
-            "xgboost": XGBClassifier(random_state=self.random_state, use_label_encoder=False, eval_metric='logloss')
+            "xgboost": XGBClassifier(random_state=self.random_state, use_label_encoder=False, eval_metric='logloss'),
+            "svc": SVC(random_state=42)
         }
         if model_type not in models:
             raise ValueError(f"El modelo '{model_type}' no es válido. Elija uno de {list(models.keys())}")
@@ -97,7 +101,7 @@ class ClassificationModel:
         Entrena el modelo seleccionado con los datos de entrenamiento y calcula las métricas de evaluación.
 
         Parameters:
-            model_type (str): Tipo de modelo a usar ("logistic", "decision_tree", "random_forest", "gradient_boosting", "xgboost").
+            model_type (str): Tipo de modelo a usar ("logistic", "decision_tree", "random_forest", "gradient_boosting", "xgboost", "svc").
             params (dict, optional): Parámetros para la búsqueda en cuadrícula (por defecto None).
 
         Returns:
@@ -227,7 +231,7 @@ class ClassificationModel:
             auc_score = roc_auc_score(self.y_test, prob_test)
 
             # Plotear la curva ROC
-            sns.lineplot(x=fpr, y=tpr, label=f"{model_name} (AUC: {auc_score:.2f})")
+            sns.lineplot(x=fpr, y=tpr, label=f"{model_name} (AUC: {auc_score:.3f})", errorbar=None)
 
         # Curva de referencia para un clasificador aleatorio
         plt.plot([0, 1], [0, 1], color="red", linestyle="--", label="Random Classifier")
@@ -285,6 +289,9 @@ class ClassificationModel:
             estimator: El modelo entrenado o el modelo base usado en la instancia.
         """
         return self.model
+    
+    def plot_shap(self, model_type):
+        return print(self.resultados[model_type]["mejor_modelo"])
 
 
 def plot_interactive_probs(y_real,y_model_prob):

@@ -18,29 +18,12 @@ from sklearn.preprocessing import OneHotEncoder
 
 from category_encoders import TargetEncoder
 
-
 from sklearn.ensemble import RandomForestRegressor
-
-from imblearn.over_sampling import RandomOverSampler, SMOTE
-from imblearn.under_sampling import RandomUnderSampler
-from imblearn.combine import SMOTETomek
 
 from scipy.stats import chi2_contingency
 
-
-def detectar_orden_cat(df, lista_cat, var_respuesta, sig_level = 0.05):
-    for categoria in lista_cat:
-        print(f"Estamos evaluando la variable {categoria.upper()}")
-        df_crosstab = pd.crosstab(df[categoria], df[var_respuesta])
-        display(df_crosstab)
-        chi2, p, dof, expected = chi2_contingency(df_crosstab)
-
-        if p<sig_level:
-            print(f"Para la categoría {categoria.upper()} SÍ hay diferencias significativas, p = {p:.4f}")
-            display(pd.DataFrame(expected, index = df_crosstab.index, columns = df_crosstab.columns).round())
-        else:
-            print(f"Para la categoría {categoria.upper()} NO hay diferencias significativas, p = {p:.4f}\n")
-        print("--------"*10)
+import warnings
+warnings.filterwarnings('ignore')
 
 def normalize_scaler(data):
     """
@@ -58,6 +41,51 @@ def normalize_scaler(data):
         range_data = data_copy[col].max() - data_copy[col].min()
         data_copy[col] = data_copy[col].apply(lambda x: (x - mean_data) / range_data)
     return data_copy
+
+
+def percent_outs(array):
+    """
+    Calcula el porcentaje de valores atípicos (-1) en un array.
+
+    Parameters:
+        array (np.array): Array con predicciones de detección de outliers.
+    
+    Returns:
+        float: Porcentaje de valores atípicos.
+    """
+    length = len(array)
+    neg_count = sum(array == -1)
+    p_outs = neg_count / length * 100
+    return p_outs
+
+
+
+def impute_nulls(data, method="rf", neighbors=5):
+    """
+    Imputa valores nulos en un DataFrame numérico utilizando diferentes métodos.
+
+    Parameters:
+        data (pd.DataFrame): DataFrame con datos numéricos.
+        method (str): Método de imputación ("rf", "knn", "base"). Default "rf".
+        neighbors (int): Número de vecinos para KNNImputer. Default 5.
+    
+    Returns:
+        pd.DataFrame, object: DataFrame imputado y objeto del modelo utilizado.
+    """
+    df_numeric = data.select_dtypes('number')
+    if method == "knn":
+        imputer_knn = KNNImputer(n_neighbors=neighbors, verbose=1)
+        df_imput = pd.DataFrame(imputer_knn.fit_transform(df_numeric), columns=df_numeric.columns, index=data.index)
+        return df_imput, imputer_knn
+    elif method == "base":
+        imputer_it = IterativeImputer(verbose=1)
+        df_imput = pd.DataFrame(imputer_it.fit_transform(df_numeric), columns=df_numeric.columns, index=data.index)
+        return df_imput, imputer_it
+    elif method == "rf":
+        imputer_forest = IterativeImputer(estimator=RandomForestRegressor(n_jobs=-1), verbose=2)
+        df_imput = pd.DataFrame(imputer_forest.fit_transform(df_numeric), columns=df_numeric.columns, index=data.index)
+        return df_imput, imputer_forest
+
 
 def scale_data(data, columns, method="robust"):
     """
@@ -82,6 +110,7 @@ def scale_data(data, columns, method="robust"):
     
     df_scaled = pd.DataFrame(scaler.fit_transform(data[columns]), columns=columns, index=data.index)
     return df_scaled, scaler
+
 
 def find_outliers(data, columns, method = "ifo", random_state = 42, threshold = 70): 
     """
@@ -129,17 +158,65 @@ def find_outliers(data, columns, method = "ifo", random_state = 42, threshold = 
 
     return df_outliers, model
 
-def percent_outs(array):
+
+
+
+def encode_onehot(data, columns):
     """
-    Calcula el porcentaje de valores atípicos (-1) en un array.
+    Realiza codificación one-hot en las columnas seleccionadas.
 
     Parameters:
-        array (np.array): Array con predicciones de detección de outliers.
+        data (pd.DataFrame): DataFrame con datos.
+        columns (list): Columnas a codificar.
     
     Returns:
-        float: Porcentaje de valores atípicos.
+        pd.DataFrame, object: DataFrame codificado y el objeto OneHotEncoder utilizado.
     """
-    length = len(array)
-    neg_count = sum(array == -1)
-    p_outs = neg_count / length * 100
-    return p_outs
+    onehot = OneHotEncoder()
+    trans_one_hot = onehot.fit_transform(data[columns])
+    oh_df = pd.DataFrame(trans_one_hot.toarray(), columns=onehot.get_feature_names_out())
+    return oh_df, onehot
+
+
+def encode_target(data, columns, response_var):
+    """
+    Realiza codificación basada en el target para las columnas seleccionadas.
+    
+    Parameters:
+        data (pd.DataFrame): DataFrame con datos.
+        columns (list): Columnas a codificar.
+        response_var (str): Variable objetivo.
+    
+    Returns:
+        pd.DataFrame, object: DataFrame codificado y el objeto TargetEncoder utilizado.
+    """
+    # Inicializamos el TargetEncoder para las columnas específicas
+    encoder = TargetEncoder(cols=columns)
+    
+    # Ajustamos el encoder con los datos de entrenamiento y la variable objetivo
+    X = data.drop(columns = response_var)
+    y = data[response_var]
+    df_encoded = encoder.fit_transform(X, y)
+    
+    # Devolvemos el dataframe con las columnas codificadas y el encoder
+    return df_encoded, encoder
+
+def detectar_orden_cat(df, lista_cat, var_respuesta, sig_level = 0.05, show = True):
+    categories_with_diff = []
+    for categoria in lista_cat:
+        df_crosstab = pd.crosstab(df[categoria], df[var_respuesta])
+        if show:
+            print(f"Estamos evaluando la variable {categoria.upper()}")
+            display(df_crosstab)
+        chi2, p, dof, expected = chi2_contingency(df_crosstab)
+
+        if p<sig_level:
+            if show:
+                print(f"Para la categoría {categoria.upper()} SÍ hay diferencias significativas, p = {p:.4f}")
+                display(pd.DataFrame(expected, index = df_crosstab.index, columns = df_crosstab.columns).round())
+            categories_with_diff.append(categoria)
+        elif show:
+            print(f"Para la categoría {categoria.upper()} NO hay diferencias significativas, p = {p:.4f}\n")
+        if show:
+            print("--------"*10)
+    return categories_with_diff
