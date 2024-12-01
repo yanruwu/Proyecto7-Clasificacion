@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import pickle
-import numpy as np
 import pandas as pd
 
 # Cargar pickles
@@ -31,15 +30,13 @@ cat_no_diff = ['Education', 'Gender', 'JobLevel', 'StockOptionLevel','Performanc
 # Inicializar la app de Flask
 app = Flask(__name__)
 
-
 # Ruta para hacer predicciones
 @app.route('/predict', methods=['POST'])
 def predict():
     # Obtener los datos de la solicitud JSON
-    input_data = request.get_json()
-    
-    # Comprobar si los datos están presentes
-    if not input_data:
+    input_data = pd.DataFrame(request.get_json(), index=[0])
+
+    if not request:
         return jsonify({'error': 'No input data provided'}), 400
 
     # Realizar la predicción
