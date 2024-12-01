@@ -40,12 +40,27 @@ def predict():
         return jsonify({'error': 'No input data provided'}), 400
 
     # Realizar la predicción
-    res_target = target.transform(input_data)
-    res_onehot = pd.DataFrame(onehot.transform(res_target[cat_no_diff]).toarray(), columns = onehot.get_feature_names_out())
+    try:
+        res_target = target.transform(input_data)
+    except Exception as e:
+        return jsonify({'error': f'Error en target encoding: {str(e)}'}), 400
+    try:
+        res_onehot = pd.DataFrame(onehot.transform(res_target[cat_no_diff]).toarray(), columns = onehot.get_feature_names_out())
+    except Exception as e:
+        return jsonify({'error': f'Error en onehot encoding: {str(e)}'}), 400
+    
     res_encoded = pd.concat([res_target.drop(columns = cat_no_diff), res_onehot], axis = 1)
-    res_scaled = pd.DataFrame(scaler.transform(res_encoded.drop(columns = res_onehot.columns)), columns = scaler.get_feature_names_out())
+
+    try:
+        res_scaled = pd.DataFrame(scaler.transform(res_encoded.drop(columns = res_onehot.columns)), columns = scaler.get_feature_names_out())
+    except Exception as e:
+        return jsonify({'error': f'Error en escalado: {str(e)}'}), 400
+    
     res_scaled = pd.concat([res_scaled, res_onehot], axis = 1)
-    prediction = model.predict(res_scaled)
+    try:
+        prediction = model.predict(res_scaled)
+    except Exception as e:
+        return jsonify({'error': f'Error en predicción: {str(e)}'}), 400
     prediction_probability = model.predict_proba(res_scaled)[0, 1]
 
     # Devolver el resultado en formato JSON
