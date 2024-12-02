@@ -137,7 +137,7 @@ Este proyecto ha permitido identificar y entender los principales factores que i
 
 - El **SHAP Summary Plot** nos ha permitido entender cómo las diferentes características afectan la predicción del modelo. Factores como una mayor **satisfacción laboral**, **menos empresas previas**, **edad avanzada** y **promociones recientes** tienden a tener un impacto positivo en la retención, mientras que una **falta de promoción** y **baja satisfacción con el ambiente** tienen un efecto negativo.
 
-![Texto Alternativo](img\shap.png)
+![SHAP graph](img/shap.png)
 
 - Aunque el modelo XGBoost presenta un **recall** alto y proporciona buenas predicciones, también se observó cierta tendencia al **overfitting** cuando se entrenó con datos balanceados, lo que implica que podría ser necesario ajustar mejor los hiperparámetros o explorar otros enfoques para mejorar la capacidad de generalización.
 
