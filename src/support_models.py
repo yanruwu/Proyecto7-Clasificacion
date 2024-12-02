@@ -323,7 +323,7 @@ def plot_interactive_probs(y_real,y_model_prob):
         x="Predicted Probability", 
         y="Jitter", 
         color="True Value",
-        color_discrete_map={"0": "red", "1": "green"},  # Colores personalizados
+        color_discrete_map={"0.0": "red", "1.0": "green"},  # Colores personalizados
         opacity=0.6,
         title="Threshold and Metrics"
     )
@@ -379,7 +379,7 @@ def plot_interactive_probs(y_real,y_model_prob):
     )
 
     # Configurar slider para actualizar threshold
-    threshold_values = [n for n in np.arange(min(y_model_prob)*0.99, max(y_model_prob)*1.01+0.001,0.0002)]
+    threshold_values = [n for n in np.arange(min(y_model_prob)*0.99, max(y_model_prob)*1.01+0.001,0.01)]
 
     sliders = [dict(
         steps=[

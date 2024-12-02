@@ -3,6 +3,10 @@ import numpy as np
 import pandas as pd
 import requests
 import pickle
+import sys
+sys.path.append("..")
+from src.support_models import plot_interactive_probs
+
 
 # Configurar el título general de la app
 st.set_page_config(page_title="Employee Attrition Predictor", page_icon="📊", layout="wide", initial_sidebar_state="collapsed")
@@ -146,6 +150,13 @@ elif page == "Modelo de Predicción":
 elif page == "Datos del DataFrame":
     st.title("Datos del DataFrame")
     st.write("Aquí se encuentran los datos del DataFrame utilizado para el análisis.")
+
+    def interactive_plot():
+        y = pd.read_pickle("../datos/y.pkl")
+        y_prob = pd.read_pickle("../datos/y_prob.pkl")
+        plot_interactive_probs(y,y_prob)
+
+    st.button(label = "Gráfico interactivo", on_click=interactive_plot)
     
     # Aplicar estilos al DataFrame para colorear según 'Attrition'
     def highlight_attrition(val):
