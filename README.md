@@ -85,7 +85,7 @@ El proyecto utiliza los siguientes paquetes:
 - [`imblearn`](https://imbalanced-learn.org/stable/): Para la gestión de desbalance.
 - [`shap`](https://shap.readthedocs.io/en/latest/): Para plots de resumen tipo SHAP.
 - [`streamlit`](https://docs.streamlit.io/): Para creación de webapp desde Python.
-- [`flax`](https://flask.palletsprojects.com/en/stable/): Para la creación de APIs desde Python.
+- [`flask`](https://flask.palletsprojects.com/en/stable/): Para la creación de APIs desde Python.
 
 ### Instalación
 
